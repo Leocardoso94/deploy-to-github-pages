@@ -1,34 +1,36 @@
 #!/bin/bash
-set -e # exit with nonzero exit code if anything fails
+set -e # termina o script com um código diferente de 0 se alguma coisa falhar
 
-SOURCE_BRANCH="master"
-
-# run our compile script, discussed above
+# roda o script de build da sua aplicação
 npm run build
 
 
-# Pull requests and commits to other branches shouldn't try to deploy, just build to verify
+# pull requests e commits para outras branches diferentes da master 
+# não devem fazer o deploy, isso é opcional caso queira deletar as próximas 6 linhas
+# fique a vontade
+SOURCE_BRANCH="master"
+
 if [ "$TRAVIS_PULL_REQUEST" != "false" -o "$TRAVIS_BRANCH" != "$SOURCE_BRANCH" ]; then
     echo "Skipping deploy."
     exit 0
 fi
 
-
-# go to the out directory and create a *new* Git repo
+# entre na pasta onde está o build do seu projeto e inicie um novo repositório git
 cd build
 git init
 
 # inside this git repo we'll pretend to be a new user
+# dentro desse repositório nós pretendemos ser um novo usuário
 git config user.name "Travis CI"
 git config user.email "leocardosoti@gmail.com"
 
-# The first and only commit to this new Git repo contains all the
-# files present with the commit message "Deploy to GitHub Pages".
+# O primeiro e único commit do seu repositório terá
+# todos os arquivos presentes e a mensagem do commit será "Deploy to GitHub Pages"
 git add .
 git commit -m "Deploy to GitHub Pages"
 
-# Force push from the current repo's master branch to the remote
-# repo's gh-pages branch. (All previous history on the gh-pages branch
-# will be lost, since we are overwriting it.) We redirect any output to
-# /dev/null to hide any sensitive credential data that might otherwise be exposed.
+# Forçando o push do master para a branch gh-pages (Toda história anterior da branch
+# gh-pages será perdido, pois vamos substituí-lo.)  Redirecionamos qualquer saída para
+# /dev/null para ocultar quaisquer dados de credenciais sensíveis que de outra forma possam ser expostos.
+# tokens GH_TOKEN e GH_REF serão fornecidos como variáveis de ambiente Travis CI
  git push --force --quiet "https://${GH_TOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1
